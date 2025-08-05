@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/lib/pq"
+	"github.com/yusuf-cirak/social/internal/db"
 )
 
 var (
@@ -25,13 +26,13 @@ type Post struct {
 }
 
 type PostStore struct {
-	db *sql.DB
+	db *db.DB
 }
 
 func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	query := `INSERT INTO posts (content, title, user_id, tags) VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at`
 
-	err := s.db.QueryRowContext(ctx, query, post.Content, post.Title, post.UserID, pq.Array(post.Tags)).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+	err := s.db.QueryRow(ctx, query, post.Content, post.Title, post.UserID, pq.Array(post.Tags)).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
 
 	return err
 }
@@ -44,7 +45,7 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 	RETURNING version
 	`
 
-	err := s.db.QueryRowContext(ctx, query, post.Title, post.Content, post.ID, post.Version).Scan(&post.Version)
+	err := s.db.QueryRow(ctx, query, post.Title, post.Content, post.ID, post.Version).Scan(&post.Version)
 
 	if err != nil {
 		switch {
@@ -61,7 +62,7 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 	query := `SELECT id, content, title, user_id, tags, created_at, updated_at, version FROM posts WHERE id = $1`
 
 	post := &Post{}
-	err := s.db.QueryRowContext(ctx, query, id).Scan(&post.ID, &post.Content, &post.Title, &post.UserID, pq.Array(&post.Tags), &post.CreatedAt, &post.UpdatedAt, &post.Version)
+	err := s.db.QueryRow(ctx, query, id).Scan(&post.ID, &post.Content, &post.Title, &post.UserID, pq.Array(&post.Tags), &post.CreatedAt, &post.UpdatedAt, &post.Version)
 
 	if err != nil {
 		switch {
@@ -76,7 +77,7 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 
 func (s *PostStore) Delete(ctx context.Context, id int64) error {
 	query := `DELETE FROM posts WHERE id = $1`
-	res, err := s.db.ExecContext(ctx, query, id)
+	res, err := s.db.Exec(ctx, query, id)
 
 	if err != nil {
 		return err

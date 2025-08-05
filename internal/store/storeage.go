@@ -2,7 +2,8 @@ package store
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/yusuf-cirak/social/internal/db"
 )
 
 type Storage struct {
@@ -21,7 +22,7 @@ type Storage struct {
 	}
 }
 
-func NewStorage(db *sql.DB) Storage {
+func NewStorage(db *db.DB) Storage {
 	return Storage{
 		Posts:    &PostStore{db: db},
 		Users:    &UserStore{db: db},

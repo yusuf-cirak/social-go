@@ -2,8 +2,9 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/yusuf-cirak/social/internal/db"
 )
 
 type Comment struct {
@@ -16,10 +17,10 @@ type Comment struct {
 }
 
 type CommentStore struct {
-	db *sql.DB
+	db *db.DB
 }
 
-func NewCommentStore(db *sql.DB) *CommentStore {
+func NewCommentStore(db *db.DB) *CommentStore {
 	return &CommentStore{db: db}
 }
 
@@ -30,7 +31,7 @@ func (s *CommentStore) GetByPostID(ctx context.Context, postID int64) ([]Comment
 	WHERE post_id = $1
 	ORDER BY c.created_at DESC
 	`
-	rows, err := s.db.QueryContext(ctx, query, postID)
+	rows, err := s.db.Query(ctx, query, postID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +55,7 @@ func (s *CommentStore) Delete(ctx context.Context, postID int64) error {
 	DELETE FROM comments
 	WHERE post_id = $1
 	`
-	res, err := s.db.ExecContext(ctx, query, postID)
+	res, err := s.db.Exec(ctx, query, postID)
 
 	if err != nil {
 		return err
