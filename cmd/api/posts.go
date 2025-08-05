@@ -40,6 +40,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
+		Version: 1,
 	}
 
 	if err := app.store.Posts.Create(ctx, post); err != nil {
