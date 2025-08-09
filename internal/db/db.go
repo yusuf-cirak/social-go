@@ -68,3 +68,18 @@ func (d *DB) Prepare(ctx context.Context, query string) (*sql.Stmt, error) {
 func (d *DB) Close() error {
 	return d.db.Close()
 }
+
+func (d *DB) WithTransaction(ctx context.Context, fn func(*sql.Tx) error) error {
+	tx, err := d.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
