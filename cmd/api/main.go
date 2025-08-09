@@ -46,8 +46,9 @@ func main() {
 	store := store.NewStorage(db)
 
 	jwtMgr := auth.NewManager(cfg.auth.Secret, cfg.auth.Issuer, cfg.auth.Audience)
+	policy := auth.NewDefaultPolicyEngine()
 
-	app := application{config: cfg, store: store, logger: logger, jwt: jwtMgr}
+	app := application{config: cfg, store: store, logger: logger, jwt: jwtMgr, policy: policy}
 
 	mux := app.mount()
 	if err := app.run(mux); err != nil {

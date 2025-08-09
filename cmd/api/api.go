@@ -16,6 +16,7 @@ type application struct {
 	store  store.Storage
 	logger *zap.SugaredLogger // zap.Logger is much faster but only does structured logging.
 	jwt    *auth.Manager
+	policy *auth.PolicyEngine
 }
 
 type config struct {
@@ -48,18 +49,28 @@ func (app *application) mount() *chi.Mux {
 		r.Post("/auth/login", app.loginHandler)
 
 		r.Route("/posts", func(r chi.Router) {
-			// Protected routes
+			// Protected routes with authorization
 			r.Group(func(r chi.Router) {
 				r.Use(app.authMiddleware)
+				r.Use(app.authorize(auth.ActionPostCreate, app.resourcePostCreate))
 				r.Post("/", app.createPostHandler)
 			})
 			r.Route("/{postID}", func(r chi.Router) {
 				r.Use(app.postsContextMiddleware)
 
 				r.Get("/", app.getPostHandler)
+
+				// Delete post - requires auth + ownership
 				r.Group(func(r chi.Router) {
 					r.Use(app.authMiddleware)
+					r.Use(app.authorize(auth.ActionPostDelete, app.resourcePostFromCtx))
 					r.Delete("/", app.deletePostHandler)
+				})
+
+				// Update post - requires auth + ownership
+				r.Group(func(r chi.Router) {
+					r.Use(app.authMiddleware)
+					r.Use(app.authorize(auth.ActionPostUpdate, app.resourcePostFromCtx))
 					r.Patch("/", app.updatePostHandler)
 				})
 			})
@@ -69,9 +80,17 @@ func (app *application) mount() *chi.Mux {
 			r.Use(app.userContextMiddleware)
 			r.Get("/", app.getUserHandler)
 
+			// Follow user - requires auth + policy check
 			r.Group(func(r chi.Router) {
 				r.Use(app.authMiddleware)
+				r.Use(app.authorize(auth.ActionUserFollow, app.resourceUserFromCtx))
 				r.Put("/{userID}/follow", app.followUserHandler)
+			})
+
+			// Unfollow user - requires auth + policy check
+			r.Group(func(r chi.Router) {
+				r.Use(app.authMiddleware)
+				r.Use(app.authorize(auth.ActionUserUnfollow, app.resourceUserFromCtx))
 				r.Delete("/{userID}/unfollow", app.unFollowUserHandler)
 			})
 		})

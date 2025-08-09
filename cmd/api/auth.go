@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	iauth "github.com/yusuf-cirak/social/internal/auth"
 	"github.com/yusuf-cirak/social/internal/store"
 )
 
@@ -100,4 +101,52 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = app.jsonResponse(w, http.StatusOK, map[string]string{"token": token})
+}
+
+// authorize returns a middleware that enforces a policy action on a resource extracted from the request.
+func (app *application) authorize(action string, extract func(*http.Request) (iauth.Resource, error)) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			current := getCurrentUser(r.Context())
+			if current == nil {
+				writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+				return
+			}
+
+			res, err := extract(r)
+			if err != nil {
+				writeJSONError(w, http.StatusBadRequest, "invalid resource")
+				return
+			}
+
+			sub := iauth.Subject{UserID: current.ID}
+			if app.policy.Authorize(sub, action, res) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			writeJSONError(w, http.StatusForbidden, "forbidden")
+		})
+	}
+}
+
+// Resource helpers
+func (app *application) resourcePostCreate(r *http.Request) (iauth.Resource, error) {
+	return iauth.Resource{Type: "post"}, nil
+}
+
+func (app *application) resourcePostFromCtx(r *http.Request) (iauth.Resource, error) {
+	p := getPostFromCtx(r)
+	if p == nil {
+		return iauth.Resource{}, errors.New("post not in context")
+	}
+	return iauth.Resource{Type: "post", OwnerID: p.UserID}, nil
+}
+
+func (app *application) resourceUserFromCtx(r *http.Request) (iauth.Resource, error) {
+	u := getUserFromContext(r.Context())
+	if u == nil {
+		return iauth.Resource{}, errors.New("user not in context")
+	}
+	return iauth.Resource{Type: "user", OwnerID: u.ID}, nil
 }

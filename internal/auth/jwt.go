@@ -66,6 +66,7 @@ func (m *Manager) ParseAndValidate(tokenStr string) (*Claims, error) {
 		jwt.WithIssuer(m.Issuer),
 		jwt.WithAudience(m.Audience),
 		jwt.WithLeeway(1*time.Minute), // small clock skew tolerance
+		jwt.WithTimeFunc(m.Now),       // Use custom time function for validation
 	)
 	if err != nil {
 		return nil, err
