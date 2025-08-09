@@ -35,8 +35,10 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 	ctx := r.Context()
 
+	current := getCurrentUser(ctx)
+
 	post := &store.Post{
-		UserID:  1,
+		UserID:  current.ID,
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,

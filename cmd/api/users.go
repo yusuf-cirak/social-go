@@ -29,7 +29,7 @@ type FollowUser struct {
 
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	followerUser := getUserFromContext(ctx)
+	followerUser := getCurrentUser(ctx)
 
 	var payload FollowUser
 	if err := readJSON(w, r, &payload); err != nil {
@@ -48,7 +48,7 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) unFollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	followerUser := getUserFromContext(ctx)
+	followerUser := getCurrentUser(ctx)
 
 	var payload FollowUser
 	if err := readJSON(w, r, &payload); err != nil {

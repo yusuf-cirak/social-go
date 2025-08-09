@@ -1,6 +1,9 @@
 package main
 
 import (
+	"time"
+
+	"github.com/yusuf-cirak/social/internal/auth"
 	"github.com/yusuf-cirak/social/internal/db"
 	"github.com/yusuf-cirak/social/internal/env"
 	"github.com/yusuf-cirak/social/internal/store"
@@ -18,6 +21,12 @@ func main() {
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "5m"),
 		},
 		env: env.GetString("ENV", "development"),
+		auth: authConfig{
+			Secret:         env.GetString("JWT_SECRET", "dev-secret-change"),
+			Issuer:         env.GetString("JWT_ISSUER", "social-go"),
+			Audience:       env.GetString("JWT_AUDIENCE", "social-users"),
+			AccessTokenTTL: time.Duration(env.GetInt("JWT_TTL_MINUTES", 60)) * time.Minute,
+		},
 	}
 
 	//Logger
@@ -36,7 +45,9 @@ func main() {
 
 	store := store.NewStorage(db)
 
-	app := application{config: cfg, store: store, logger: logger}
+	jwtMgr := auth.NewManager(cfg.auth.Secret, cfg.auth.Issuer, cfg.auth.Audience)
+
+	app := application{config: cfg, store: store, logger: logger, jwt: jwtMgr}
 
 	mux := app.mount()
 	if err := app.run(mux); err != nil {

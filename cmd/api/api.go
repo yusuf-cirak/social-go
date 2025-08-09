@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/yusuf-cirak/social/internal/auth"
 	"github.com/yusuf-cirak/social/internal/store"
 	"go.uber.org/zap"
 )
@@ -14,12 +15,14 @@ type application struct {
 	config config
 	store  store.Storage
 	logger *zap.SugaredLogger // zap.Logger is much faster but only does structured logging.
+	jwt    *auth.Manager
 }
 
 type config struct {
 	addr string
 	db   dbConfig
 	env  string
+	auth authConfig
 }
 
 type dbConfig struct {
@@ -41,14 +44,24 @@ func (app *application) mount() *chi.Mux {
 
 		r.Get("/health", app.healthCheckHandler)
 
+		// auth endpoints
+		r.Post("/auth/login", app.loginHandler)
+
 		r.Route("/posts", func(r chi.Router) {
-			r.Post("/", app.createPostHandler)
+			// Protected routes
+			r.Group(func(r chi.Router) {
+				r.Use(app.authMiddleware)
+				r.Post("/", app.createPostHandler)
+			})
 			r.Route("/{postID}", func(r chi.Router) {
 				r.Use(app.postsContextMiddleware)
 
 				r.Get("/", app.getPostHandler)
-				r.Delete("/", app.deletePostHandler)
-				r.Patch("/", app.updatePostHandler)
+				r.Group(func(r chi.Router) {
+					r.Use(app.authMiddleware)
+					r.Delete("/", app.deletePostHandler)
+					r.Patch("/", app.updatePostHandler)
+				})
 			})
 		})
 
@@ -56,11 +69,15 @@ func (app *application) mount() *chi.Mux {
 			r.Use(app.userContextMiddleware)
 			r.Get("/", app.getUserHandler)
 
-			r.Put("/{userID}/follow", app.followUserHandler)
-			r.Delete("/{userID}/unfollow", app.unFollowUserHandler)
+			r.Group(func(r chi.Router) {
+				r.Use(app.authMiddleware)
+				r.Put("/{userID}/follow", app.followUserHandler)
+				r.Delete("/{userID}/unfollow", app.unFollowUserHandler)
+			})
 		})
 
 		r.Group(func(r chi.Router) {
+			r.Use(app.authMiddleware)
 			r.Get("/feed", app.getUserFeedHandler)
 		})
 	})
