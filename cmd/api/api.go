@@ -11,16 +11,18 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/yusuf-cirak/social/internal/auth"
+	"github.com/yusuf-cirak/social/internal/ratelimiter"
 	"github.com/yusuf-cirak/social/internal/store"
 	"go.uber.org/zap"
 )
 
 type application struct {
-	config config
-	store  store.Storage
-	logger *zap.SugaredLogger // zap.Logger is much faster but only does structured logging.
-	jwt    *auth.Manager
-	policy *auth.PolicyEngine
+	config      config
+	store       store.Storage
+	logger      *zap.SugaredLogger // zap.Logger is much faster but only does structured logging.
+	jwt         *auth.Manager
+	policy      *auth.PolicyEngine
+	rateLimiter *ratelimiter.FixedWindowRateLimiter
 }
 
 type config struct {
@@ -44,6 +46,8 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	r.Use(app.RateLimiterMiddleware)
 
 	r.Route("/v1", func(r chi.Router) {
 

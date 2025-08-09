@@ -6,6 +6,7 @@ import (
 	"github.com/yusuf-cirak/social/internal/auth"
 	"github.com/yusuf-cirak/social/internal/db"
 	"github.com/yusuf-cirak/social/internal/env"
+	"github.com/yusuf-cirak/social/internal/ratelimiter"
 	"github.com/yusuf-cirak/social/internal/store"
 	"go.uber.org/zap"
 )
@@ -48,7 +49,8 @@ func main() {
 	jwtMgr := auth.NewManager(cfg.auth.Secret, cfg.auth.Issuer, cfg.auth.Audience)
 	policy := auth.NewDefaultPolicyEngine()
 
-	app := application{config: cfg, store: store, logger: logger, jwt: jwtMgr, policy: policy}
+	rateLimiter := ratelimiter.NewFixedWindowRateLimiter(10, time.Second)
+	app := application{config: cfg, store: store, logger: logger, jwt: jwtMgr, policy: policy, rateLimiter: rateLimiter}
 
 	mux := app.mount()
 	if err := app.run(mux); err != nil {
