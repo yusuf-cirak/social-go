@@ -4,6 +4,7 @@ import (
 	"github.com/yusuf-cirak/social/internal/db"
 	"github.com/yusuf-cirak/social/internal/env"
 	"github.com/yusuf-cirak/social/internal/store"
+	"go.uber.org/zap"
 )
 
 const version = "1.0.0"
@@ -19,19 +20,26 @@ func main() {
 		env: env.GetString("ENV", "development"),
 	}
 
+	//Logger
+
+	logger := zap.Must(zap.NewProduction()).Sugar()
+
+	defer logger.Sync() // flushes buffer, if any
+	// Db
+
 	db, err := db.New(cfg.db.addr, cfg.db.maxOpenConns, cfg.db.maxIdleConns, cfg.db.maxIdleTime)
 	if err != nil {
-		panic(err)
+		logger.Fatalw("Failed to connect to database", "error", err)
 	}
 
 	defer db.Close()
 
 	store := store.NewStorage(db)
 
-	app := application{config: cfg, store: store}
+	app := application{config: cfg, store: store, logger: logger}
 
 	mux := app.mount()
 	if err := app.run(mux); err != nil {
-		panic(err)
+		logger.Fatalw("Failed to start server", "error", err)
 	}
 }

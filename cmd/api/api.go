@@ -7,11 +7,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/yusuf-cirak/social/internal/store"
+	"go.uber.org/zap"
 )
 
 type application struct {
 	config config
 	store  store.Storage
+	logger *zap.SugaredLogger // zap.Logger is much faster but only does structured logging.
 }
 
 type config struct {
@@ -76,5 +78,7 @@ func (app *application) run(mux *chi.Mux) error {
 		ReadTimeout:  time.Second * 10,
 		IdleTimeout:  time.Second * 60,
 	}
+
+	app.logger.Infow("Starting server", "address", app.config.addr, "environment", app.config.env)
 	return srv.ListenAndServe()
 }
