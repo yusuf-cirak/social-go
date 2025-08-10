@@ -25,7 +25,7 @@ linters:
     - goconst
     - gocyclo
     - godot
-    - gomnd
+    - mnd
     - goprintffuncname
     - nestif
     - prealloc
@@ -40,7 +40,7 @@ linters-settings:
     min-complexity: 15
   gocyclo:
     min-complexity: 15
-  gomnd:
+  mnd:
     checks:
       - argument
       - case
@@ -59,14 +59,14 @@ issues:
   exclude-rules:
     - path: "_test\\.go"
       linters:
-        - gomnd
+        - mnd
         - goconst
     - path: "cmd/migrate/"
       linters:
-        - gomnd
+        - mnd
     - path: "internal/db/seed/"
       linters:
-        - gomnd
+        - mnd
         - gosec
   max-issues-per-linter: 0
   max-same-issues: 0
