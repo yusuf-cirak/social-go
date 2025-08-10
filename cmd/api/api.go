@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/yusuf-cirak/social/internal/auth"
 	"github.com/yusuf-cirak/social/internal/ratelimiter"
 	"github.com/yusuf-cirak/social/internal/store"
@@ -46,6 +47,8 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	r.Use(cors.AllowAll().Handler)
 
 	r.Use(app.RateLimiterMiddleware)
 
