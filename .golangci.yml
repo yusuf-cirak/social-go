@@ -1,0 +1,72 @@
+# @format
+
+# golangci-lint configuration
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - gocritic
+    - gosec
+    - bodyclose
+    - exportloopref
+    - gocognit
+    - goconst
+    - gocyclo
+    - godot
+    - gomnd
+    - goprintffuncname
+    - nestif
+    - prealloc
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - whitespace
+
+linters-settings:
+  gocognit:
+    min-complexity: 15
+  gocyclo:
+    min-complexity: 15
+  gomnd:
+    checks:
+      - argument
+      - case
+      - condition
+      - operation
+      - return
+      - assign
+  gosec:
+    excludes:
+      - G401
+      - G501
+  misspell:
+    locale: US
+
+issues:
+  exclude-rules:
+    - path: "_test\\.go"
+      linters:
+        - gomnd
+        - goconst
+    - path: "cmd/migrate/"
+      linters:
+        - gomnd
+    - path: "internal/db/seed/"
+      linters:
+        - gomnd
+        - gosec
+  max-issues-per-linter: 0
+  max-same-issues: 0
