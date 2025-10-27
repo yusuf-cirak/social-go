@@ -122,7 +122,7 @@ jobs:
           go build -ldflags="-s -w" -o bin/social-api-${{ matrix.os }}-${{ matrix.arch }} ./cmd/api
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: social-api-${{ matrix.os }}-${{ matrix.arch }}
           path: bin/social-api-${{ matrix.os }}-${{ matrix.arch }}*
